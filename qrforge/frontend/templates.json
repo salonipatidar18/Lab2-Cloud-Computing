@@ -1,0 +1,98 @@
+[
+  {
+    "id": "neon-cyber",
+    "name": "Neon Cyber",
+    "fg": "#00ff9d",
+    "bg": "#0a0a1a",
+    "ecc": "H",
+    "margin": 2,
+    "style": "rounded",
+    "cardGradient": "linear-gradient(135deg, #0a0a1a 0%, #1a0a3a 50%, #0a1a0a 100%)",
+    "accentColor": "#00ff9d",
+    "description": "Cyberpunk neon on deep dark background"
+  },
+  {
+    "id": "sunset-gradient",
+    "name": "Sunset Gradient",
+    "fg": "#ff4e50",
+    "bg": "#fff5f0",
+    "ecc": "M",
+    "margin": 3,
+    "style": "rounded",
+    "cardGradient": "linear-gradient(135deg, #f9a825 0%, #ff6f00 50%, #e64a19 100%)",
+    "accentColor": "#ff4e50",
+    "description": "Warm sunset tones, vibrant and energetic"
+  },
+  {
+    "id": "ocean-blue",
+    "name": "Ocean Blue",
+    "fg": "#0077b6",
+    "bg": "#f0f8ff",
+    "ecc": "Q",
+    "margin": 3,
+    "style": "dot",
+    "cardGradient": "linear-gradient(135deg, #023e8a 0%, #0096c7 50%, #48cae4 100%)",
+    "accentColor": "#0096c7",
+    "description": "Deep ocean blues, professional and trustworthy"
+  },
+  {
+    "id": "forest-green",
+    "name": "Forest Green",
+    "fg": "#1b4332",
+    "bg": "#f0faf5",
+    "ecc": "M",
+    "margin": 3,
+    "style": "rounded",
+    "cardGradient": "linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #52b788 100%)",
+    "accentColor": "#52b788",
+    "description": "Natural forest greens, calm and organic"
+  },
+  {
+    "id": "minimal-mono",
+    "name": "Minimal Mono",
+    "fg": "#111111",
+    "bg": "#ffffff",
+    "ecc": "L",
+    "margin": 4,
+    "style": "square",
+    "cardGradient": "linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 100%)",
+    "accentColor": "#666666",
+    "description": "Classic black on white, timeless and crisp"
+  },
+  {
+    "id": "retro-pixel",
+    "name": "Retro Pixel",
+    "fg": "#ff6b6b",
+    "bg": "#1a1a2e",
+    "ecc": "H",
+    "margin": 2,
+    "style": "square",
+    "cardGradient": "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+    "accentColor": "#ff6b6b",
+    "description": "Retro gaming aesthetic, bold pixel art vibes"
+  },
+  {
+    "id": "royal-gold",
+    "name": "Royal Gold",
+    "fg": "#b8860b",
+    "bg": "#1a0a00",
+    "ecc": "Q",
+    "margin": 3,
+    "style": "rounded",
+    "cardGradient": "linear-gradient(135deg, #1a0a00 0%, #3d1f00 50%, #7d4e00 100%)",
+    "accentColor": "#ffd700",
+    "description": "Luxurious gold on dark, premium and regal"
+  },
+  {
+    "id": "candy-pop",
+    "name": "Candy Pop",
+    "fg": "#e040fb",
+    "bg": "#fff0ff",
+    "ecc": "M",
+    "margin": 3,
+    "style": "dot",
+    "cardGradient": "linear-gradient(135deg, #f48fb1 0%, #e040fb 50%, #7c4dff 100%)",
+    "accentColor": "#e040fb",
+    "description": "Sweet pastel pops of color, playful and fun"
+  }
+]

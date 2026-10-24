@@ -1,0 +1,111 @@
+# k8s/deployment.yaml
+# QRForge Frontend Deployment
+# ─────────────────────────────────────────────────────────────
+# BEFORE APPLYING: replace <ACR_NAME> with your actual ACR name:
+#   sed -i 's/<ACR_NAME>/qrforgeacrXXXXXX/g' k8s/deployment.yaml
+# ─────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qrforge-frontend
+  namespace: qrforge
+  labels:
+    app: qrforge-frontend
+    app.kubernetes.io/name: qrforge-frontend
+    app.kubernetes.io/component: frontend
+    version: v1
+spec:
+  # Start with 1 replica; HPA will scale this up to 5 under load
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qrforge-frontend
+  # Rolling update strategy ensures zero-downtime deployments
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1         # Allow 1 extra pod during update
+      maxUnavailable: 0   # Never take down more than 0 existing pods
+  template:
+    metadata:
+      labels:
+        app: qrforge-frontend
+        app.kubernetes.io/name: qrforge-frontend
+        version: v1
+      annotations:
+        # ── Prometheus scrape configuration ──────────────────
+        # The AMA-Metrics / managed Prometheus agent will look for these
+        # annotations to discover pods to scrape for custom metrics.
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "3000"
+        prometheus.io/path:   "/metrics"
+    spec:
+      # Graceful shutdown: allow up to 30s for in-flight requests to complete
+      # before the pod is forcibly terminated (matches SIGTERM handling in server.js)
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001       # qrforge user created in Dockerfile
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: frontend
+          # ── Image ────────────────────────────────────────────
+          # Replace <ACR_NAME> with your ACR login server prefix
+          image: <ACR_NAME>.azurecr.io/qrforge-frontend:v1
+          imagePullPolicy: Always    # Always pull to pick up :v1 tag updates
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          # ── Environment variables ─────────────────────────────
+          env:
+            - name: REDIS_HOST
+              value: "redis"          # Kubernetes DNS resolves to redis ClusterIP
+            - name: REDIS_PORT
+              value: "6379"
+            - name: NODE_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "silent"         # Suppress per-request logs (saves Azure Monitor quota)
+            - name: PORT
+              value: "3000"
+          # ── Resource management ──────────────────────────────
+          # IMPORTANT: HPA uses requests as the denominator for CPU%.
+          #   cpu: 100m request means HPA triggers at 100m * 50% = 50m actual usage.
+          #   If requests is not set, HPA cannot compute utilization % and will
+          #   show "FailedGetResourceMetric" in kubectl describe hpa.
+          resources:
+            requests:
+              cpu:    "100m"    # Assignment requirement: exactly 100m
+              memory: "128Mi"   # Assignment requirement: exactly 128Mi
+            limits:
+              cpu:    "200m"    # Allow burst to 200m before throttling
+              memory: "256Mi"   # OOM kill threshold
+          # ── Readiness probe ───────────────────────────────────
+          # Kubernetes only sends traffic to the pod when this returns 200.
+          # /readyz checks Redis connectivity — if Redis is down, traffic stops.
+          # This PREVENTS cascading failures by removing the pod from the LB.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 10   # Wait 10s after container start
+            periodSeconds:       5    # Check every 5 seconds
+            failureThreshold:    3    # Remove from LB after 3 failures (15s)
+            successThreshold:    1    # Re-add to LB after 1 success
+            timeoutSeconds:      3
+          # ── Liveness probe ────────────────────────────────────
+          # If this fails, Kubernetes RESTARTS the container.
+          # /healthz only checks if the Node process is alive (not Redis).
+          # We deliberately use a lighter check so Redis downtime doesn't
+          # cause unnecessary container restarts.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20   # Give the app 20s to start before checking
+            periodSeconds:       15   # Check every 15 seconds
+            failureThreshold:    4    # Restart after 4 consecutive failures (60s)
+            successThreshold:    1
+            timeoutSeconds:      5

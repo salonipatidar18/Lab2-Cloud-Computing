@@ -1,0 +1,73 @@
+# k8s/redis-deployment.yaml
+# Redis 7 (alpine) — in-memory cache and data store for QRForge
+# No persistence configured (emptyDir) to keep the demo simple.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: qrforge
+  labels:
+    app: redis
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/component: cache
+    spec:
+      # Limit the pod's capabilities for security
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999      # redis user in the official image
+        fsGroup: 999
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          # ── Resource management ──────────────────────────────
+          # Requests: guaranteed allocation on the node.
+          # Limits:   hard cap — process is OOM-killed if exceeded.
+          resources:
+            requests:
+              cpu:    "50m"
+              memory: "64Mi"
+            limits:
+              cpu:    "200m"
+              memory: "128Mi"
+          # ── Liveness probe ───────────────────────────────────
+          # If redis-cli ping fails 3 times the container is restarted.
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+          # ── Readiness probe ──────────────────────────────────
+          # Traffic is only routed to this pod when it can serve requests.
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        # emptyDir is ephemeral — deleted when the pod is removed.
+        # For production you'd use a PersistentVolumeClaim.
+        - name: redis-data
+          emptyDir: {}

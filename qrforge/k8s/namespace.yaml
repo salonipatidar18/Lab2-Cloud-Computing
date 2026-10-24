@@ -1,0 +1,10 @@
+# k8s/namespace.yaml
+# Isolates all QRForge resources into their own namespace.
+# Namespaces provide: resource quotas, RBAC scoping, and network policy targeting.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qrforge
+  labels:
+    app.kubernetes.io/name: qrforge
+    environment: production

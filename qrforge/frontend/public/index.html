@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QRForge — Professional QR Code Generator</title>
+  <meta name="description" content="QRForge: Create stunning, customizable QR codes for URLs, Wi-Fi, contacts, and more. Choose from 8 designer templates." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <!-- ─── HEADER ─── -->
+  <header class="site-header" id="site-header">
+    <div class="header-inner">
+      <a href="/" class="logo" aria-label="QRForge Home">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">QR<span class="logo-accent">Forge</span></span>
+      </a>
+      <nav class="header-nav" aria-label="Main navigation">
+        <button class="nav-btn" id="btn-stats" aria-label="View statistics">Stats</button>
+        <a href="/metrics" class="nav-btn" target="_blank" rel="noopener" aria-label="Prometheus metrics">Metrics</a>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode" title="Toggle theme">
+          <span class="theme-icon">🌙</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ─── HERO ─── -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="hero-orb hero-orb--1"></div>
+      <div class="hero-orb hero-orb--2"></div>
+      <div class="hero-orb hero-orb--3"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">✦ Powered by Node.js &amp; Redis</div>
+      <h1 id="hero-heading" class="hero-title">
+        Craft <span class="gradient-text">Beautiful</span><br/>QR Codes Instantly
+      </h1>
+      <p class="hero-subtitle">
+        8 designer templates · PNG &amp; SVG export · URL, Wi-Fi, vCard, and more
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── MAIN APP ─── -->
+  <main class="app-main" id="main-content">
+    <div class="app-grid">
+
+      <!-- ── LEFT COLUMN: Input + Controls ── -->
+      <section class="panel panel--input" aria-label="QR code configuration">
+
+        <!-- Input type tabs -->
+        <div class="tabs" role="tablist" aria-label="Input type">
+          <button class="tab tab--active" role="tab" aria-selected="true"  data-type="url"   id="tab-url">URL</button>
+          <button class="tab"              role="tab" aria-selected="false" data-type="text"  id="tab-text">Text</button>
+          <button class="tab"              role="tab" aria-selected="false" data-type="wifi"  id="tab-wifi">Wi-Fi</button>
+          <button class="tab"              role="tab" aria-selected="false" data-type="email" id="tab-email">Email</button>
+          <button class="tab"              role="tab" aria-selected="false" data-type="phone" id="tab-phone">Phone</button>
+          <button class="tab"              role="tab" aria-selected="false" data-type="vcard" id="tab-vcard">vCard</button>
+        </div>
+
+        <!-- Dynamic input fields -->
+        <div class="input-panel" id="inputPanel">
+          <!-- URL -->
+          <div class="input-group" id="fields-url" aria-labelledby="tab-url">
+            <label class="field-label" for="input-url">Website URL</label>
+            <input class="field-input" id="input-url" type="url" placeholder="https://example.com" autocomplete="url" />
+          </div>
+
+          <!-- Text -->
+          <div class="input-group hidden" id="fields-text" aria-labelledby="tab-text">
+            <label class="field-label" for="input-text">Plain Text</label>
+            <textarea class="field-input field-textarea" id="input-text" placeholder="Enter any text…" rows="4"></textarea>
+          </div>
+
+          <!-- Wi-Fi -->
+          <div class="input-group hidden" id="fields-wifi" aria-labelledby="tab-wifi">
+            <label class="field-label" for="input-ssid">Network Name (SSID)</label>
+            <input class="field-input" id="input-ssid" type="text" placeholder="MyHomeNetwork" />
+            <label class="field-label" for="input-password">Password</label>
+            <input class="field-input" id="input-password" type="password" placeholder="supersecret" autocomplete="off" />
+            <label class="field-label" for="input-encryption">Encryption</label>
+            <select class="field-input field-select" id="input-encryption">
+              <option value="WPA">WPA/WPA2</option>
+              <option value="WEP">WEP</option>
+              <option value="nopass">None</option>
+            </select>
+          </div>
+
+          <!-- Email -->
+          <div class="input-group hidden" id="fields-email" aria-labelledby="tab-email">
+            <label class="field-label" for="input-email">Email Address</label>
+            <input class="field-input" id="input-email" type="email" placeholder="hello@example.com" autocomplete="email" />
+            <label class="field-label" for="input-subject">Subject</label>
+            <input class="field-input" id="input-subject" type="text" placeholder="Hello from QRForge" />
+            <label class="field-label" for="input-body">Message Body</label>
+            <textarea class="field-input field-textarea" id="input-body" placeholder="Your message…" rows="3"></textarea>
+          </div>
+
+          <!-- Phone -->
+          <div class="input-group hidden" id="fields-phone" aria-labelledby="tab-phone">
+            <label class="field-label" for="input-phone">Phone Number</label>
+            <input class="field-input" id="input-phone" type="tel" placeholder="+1 555 000 0000" autocomplete="tel" />
+          </div>
+
+          <!-- vCard -->
+          <div class="input-group hidden" id="fields-vcard" aria-labelledby="tab-vcard">
+            <label class="field-label" for="input-vname">Full Name</label>
+            <input class="field-input" id="input-vname" type="text" placeholder="Jane Doe" />
+            <label class="field-label" for="input-vorg">Organization</label>
+            <input class="field-input" id="input-vorg" type="text" placeholder="Acme Corp" />
+            <label class="field-label" for="input-vphone">Phone</label>
+            <input class="field-input" id="input-vphone" type="tel" placeholder="+1 555 000 0000" />
+            <label class="field-label" for="input-vemail">Email</label>
+            <input class="field-input" id="input-vemail" type="email" placeholder="jane@acme.com" />
+            <label class="field-label" for="input-vurl">Website</label>
+            <input class="field-input" id="input-vurl" type="url" placeholder="https://acme.com" />
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-section">
+          <div class="controls-row">
+            <div class="control-group">
+              <label class="field-label" for="ctrl-size">
+                Size: <span class="value-badge" id="sizeValue">512</span>px
+              </label>
+              <input class="range-slider" id="ctrl-size" type="range" min="128" max="2048" step="64" value="512" aria-label="QR code size in pixels" />
+            </div>
+            <div class="control-group">
+              <label class="field-label" for="ctrl-ecc">Error Correction</label>
+              <select class="field-input field-select" id="ctrl-ecc" aria-label="Error correction level">
+                <option value="L">L — Low (7%)</option>
+                <option value="M" selected>M — Medium (15%)</option>
+                <option value="Q">Q — Quartile (25%)</option>
+                <option value="H">H — High (30%)</option>
+              </select>
+            </div>
+          </div>
+          <div class="controls-row">
+            <div class="control-group">
+              <label class="field-label" for="ctrl-fg">Foreground Color</label>
+              <div class="color-row">
+                <input class="color-swatch" id="ctrl-fg" type="color" value="#000000" aria-label="Foreground color" />
+                <span class="color-value" id="fgValue">#000000</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="field-label" for="ctrl-bg">Background Color</label>
+              <div class="color-row">
+                <input class="color-swatch" id="ctrl-bg" type="color" value="#ffffff" aria-label="Background color" />
+                <span class="color-value" id="bgValue">#ffffff</span>
+              </div>
+            </div>
+          </div>
+          <div class="controls-row">
+            <div class="control-group control-group--full">
+              <label class="field-label" for="ctrl-overlay">Center Text Overlay (optional)</label>
+              <input class="field-input" id="ctrl-overlay" type="text" placeholder="SCAN ME" maxlength="20" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="action-bar">
+          <button class="btn btn--primary" id="btn-generate" aria-label="Generate QR code">
+            <span class="btn-icon">⚡</span> Generate QR
+          </button>
+          <button class="btn btn--secondary" id="btn-download-png" disabled aria-label="Download PNG">
+            <span class="btn-icon">↓</span> PNG
+          </button>
+          <button class="btn btn--secondary" id="btn-download-svg" disabled aria-label="Download SVG">
+            <span class="btn-icon">↓</span> SVG
+          </button>
+          <button class="btn btn--ghost" id="btn-copy" disabled aria-label="Copy to clipboard">
+            <span class="btn-icon">⧉</span> Copy
+          </button>
+        </div>
+      </section>
+
+      <!-- ── MIDDLE COLUMN: Preview ── -->
+      <section class="panel panel--preview" aria-label="QR code preview">
+        <div class="preview-header">
+          <h2 class="panel-title">Live Preview</h2>
+          <span class="cache-badge" id="cacheBadge" aria-live="polite"></span>
+        </div>
+        <div class="preview-canvas-wrap" id="previewWrap">
+          <canvas id="previewCanvas" width="300" height="300" aria-label="QR code preview canvas"></canvas>
+          <div class="preview-placeholder" id="previewPlaceholder" aria-live="polite">
+            <div class="placeholder-icon">⬡</div>
+            <p>Your QR code will appear here</p>
+          </div>
+          <div class="preview-spinner hidden" id="previewSpinner" aria-label="Generating…" role="status">
+            <div class="spinner"></div>
+          </div>
+        </div>
+        <div class="pod-badge" id="podBadge" title="Serving pod (shows load balancing across replicas)">
+          <span class="pod-dot"></span>
+          Pod: <span id="podName">—</span>
+        </div>
+      </section>
+
+      <!-- ── RIGHT COLUMN: Templates ── -->
+      <section class="panel panel--templates" aria-label="Design templates">
+        <h2 class="panel-title">Design Templates</h2>
+        <div class="template-grid" id="templateGrid" role="radiogroup" aria-label="Select a QR design template">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+    </div>
+
+    <!-- ── BOTTOM PANELS ── -->
+    <div class="bottom-panels">
+      <!-- Recent History -->
+      <section class="panel panel--history" aria-label="Recent QR codes">
+        <div class="panel-header-row">
+          <h2 class="panel-title">Recent QR Codes</h2>
+          <button class="refresh-btn" id="btn-refresh-history" aria-label="Refresh history">↻</button>
+        </div>
+        <div class="history-list" id="historyList" aria-live="polite">
+          <p class="empty-hint">No history yet — generate your first QR code!</p>
+        </div>
+      </section>
+
+      <!-- Stats -->
+      <section class="panel panel--stats" aria-label="Usage statistics" id="statsPanel">
+        <div class="panel-header-row">
+          <h2 class="panel-title">Statistics</h2>
+          <button class="refresh-btn" id="btn-refresh-stats" aria-label="Refresh stats">↻</button>
+        </div>
+        <div class="stats-grid" id="statsGrid" aria-live="polite">
+          <div class="stat-card">
+            <div class="stat-number" id="stat-total">—</div>
+            <div class="stat-label">Total Generated</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="stat-hits">—</div>
+            <div class="stat-label">Cache Hits</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="stat-misses">—</div>
+            <div class="stat-label">Cache Misses</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="stat-ratio">—</div>
+            <div class="stat-label">Hit Ratio</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ─── FOOTER ─── -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>QRForge © 2024 — Cloud Lab Assignment</span>
+      <span class="footer-pod">
+        <span class="pod-dot pod-dot--sm"></span>
+        Pod: <code id="footerPod">—</code>
+      </span>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "_comment": "Azure Portal Dashboard for QRForge monitoring. Import via: Portal > Dashboard > Upload > select this file. If import fails, create tiles manually using the instructions in the comments.",
+  "resources": [
+    {
+      "type": "Microsoft.Portal/dashboards",
+      "apiVersion": "2020-09-01-preview",
+      "name": "qrforge-monitoring-dashboard",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "hidden-title": "QRForge Monitoring"
+      },
+      "properties": {
+        "lenses": {
+          "0": {
+            "order": 0,
+            "parts": {
+
+              "0": {
+                "position": { "x": 0, "y": 0, "colSpan": 6, "rowSpan": 4 },
+                "_comment": "TILE 1: CPU per pod — use InsightsMetrics query #1 from kql-queries.md",
+                "metadata": {
+                  "type": "Extension/HubsExtension/PartType/MonitorChartPart",
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": { "resourceType": "Microsoft.ContainerService/managedClusters" },
+                              "name": "node_cpu_usage_percentage",
+                              "aggregationType": 4,
+                              "namespace": "insights.container/nodes",
+                              "displayName": "CPU % per node"
+                            }
+                          ],
+                          "title": "CPU Utilization per Pod — QRForge Frontend",
+                          "titleKind": 1,
+                          "visualization": { "chartType": 2 },
+                          "timespan": { "relative": { "duration": 3600000 } }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+
+              "1": {
+                "position": { "x": 6, "y": 0, "colSpan": 6, "rowSpan": 4 },
+                "_comment": "TILE 2: Memory working set — use query #2 from kql-queries.md",
+                "metadata": {
+                  "type": "Extension/HubsExtension/PartType/MonitorChartPart",
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": { "resourceType": "Microsoft.ContainerService/managedClusters" },
+                              "name": "node_memory_working_set_percentage",
+                              "aggregationType": 4,
+                              "namespace": "insights.container/nodes",
+                              "displayName": "Memory Working Set %"
+                            }
+                          ],
+                          "title": "Memory Working Set Trend — QRForge",
+                          "titleKind": 1,
+                          "visualization": { "chartType": 2 },
+                          "timespan": { "relative": { "duration": 3600000 } }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+
+              "2": {
+                "position": { "x": 0, "y": 4, "colSpan": 6, "rowSpan": 4 },
+                "_comment": "TILE 3: HTTP request count + P95 latency. Pin a Log Analytics query chart using query #3a/#3b from kql-queries.md",
+                "metadata": {
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+                  "inputs": [
+                    {
+                      "name": "resourceTypeMode",
+                      "value": { "scope": "cluster" }
+                    },
+                    {
+                      "name": "ComponentId",
+                      "value": { "Name": "qrforge-logs" }
+                    },
+                    {
+                      "name": "Query",
+                      "value": "InsightsMetrics\n| where TimeGenerated >= ago(30m)\n| where Namespace == 'prometheus'\n| where Name == 'http_requests_total'\n| extend Route = tostring(parse_json(Tags)['route']), Status = tostring(parse_json(Tags)['status'])\n| summarize TotalRequests = sum(Val) by bin(TimeGenerated, 1m), Route, Status\n| render timechart"
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "HTTP Request Count + P95 Latency"
+                    }
+                  ]
+                }
+              },
+
+              "3": {
+                "position": { "x": 6, "y": 4, "colSpan": 6, "rowSpan": 4 },
+                "_comment": "TILE 4: Active replica count. Uses KubePodInventory query #4 from kql-queries.md",
+                "metadata": {
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+                  "inputs": [
+                    {
+                      "name": "Query",
+                      "value": "KubePodInventory\n| where TimeGenerated >= ago(1h)\n| where Namespace == 'qrforge'\n| where Name startswith 'qrforge-frontend'\n| where PodStatus == 'Running'\n| summarize ReplicaCount = dcount(Name) by bin(TimeGenerated, 1m)\n| render timechart"
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Replica Count During Autoscaling (HPA)"
+                    }
+                  ]
+                }
+              }
+
+            }
+          }
+        },
+        "metadata": {
+          "model": {
+            "timeRange": {
+              "value": { "relative": { "duration": 3600000 } },
+              "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+            }
+          }
+        }
+      }
+    }
+  ],
+
+  "_portal_instructions": {
+    "HOW_TO_IMPORT": [
+      "1. Azure Portal → search 'Dashboard' in top bar",
+      "2. Click '+ Create' → 'Upload'",
+      "3. Select this dashboard.json file",
+      "4. Scope each tile to your AKS cluster and Log Analytics workspace",
+      "",
+      "MANUAL TILE CREATION (if import fails):",
+      "",
+      "TILE 1 — CPU per Pod:",
+      "  Monitor > Metrics > Scope: your AKS cluster",
+      "  Metric namespace: insights.container/containers",
+      "  Metric: cpuUsageNanoCores, Aggregation: Avg",
+      "  Split by: containerName",
+      "  Filter: containerName contains 'qrforge-frontend'",
+      "  Pin to dashboard",
+      "",
+      "TILE 2 — Memory Trend:",
+      "  Same as above but metric: memoryWorkingSetBytes",
+      "",
+      "TILE 3 — HTTP Requests + P95:",
+      "  Log Analytics > Logs > paste query #3a from kql-queries.md",
+      "  Click 'Pin to dashboard'",
+      "",
+      "TILE 4 — Replica Count:",
+      "  Log Analytics > Logs > paste query #4 from kql-queries.md",
+      "  Click 'Pin to dashboard'"
+    ]
+  }
+}

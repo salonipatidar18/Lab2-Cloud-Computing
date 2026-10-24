@@ -1,0 +1,73 @@
+# ═══════════════════════════════════════════════════════════════
+# QRForge — docker-compose.yml
+# Runs the complete two-tier stack locally for development/testing
+# Usage: docker compose up --build
+# ═══════════════════════════════════════════════════════════════
+
+name: qrforge
+
+services:
+
+  # ── Tier 2: Redis data/cache service ─────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: qrforge-redis
+    restart: unless-stopped
+    # Redis listens on 6379 inside the user-defined network.
+    # We do NOT expose it to the host (no ports: mapping) for security.
+    networks:
+      - qrforge-net
+    # Tiny resource footprint for local dev
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    healthcheck:
+      # Docker will mark redis as healthy only when it answers PING
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    # Use an anonymous volume for the RDB dump (optional — survives restarts
+    # but we don't need data persistence for the assignment)
+    tmpfs:
+      - /data
+
+  # ── Tier 1: Frontend / API service ───────────────────────────
+  frontend:
+    build:
+      context: ./frontend           # Dockerfile is in ./frontend/
+      dockerfile: Dockerfile
+    container_name: qrforge-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"                 # Accessible at http://localhost:3000
+    environment:
+      NODE_ENV:   production
+      PORT:       "3000"
+      REDIS_HOST: redis             # Resolved by Docker's embedded DNS within qrforge-net
+      REDIS_PORT: "6379"
+      LOG_LEVEL:  silent            # No per-request logs (saves cloud logging quota)
+    networks:
+      - qrforge-net
+    # Only start frontend AFTER redis reports healthy
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+# ── User-defined bridge network ───────────────────────────────
+# A user-defined bridge gives us:
+#   • Service discovery by name (redis, frontend)
+#   • Isolation from other Docker networks on the host
+#   • Better security: containers cannot reach each other unless in same network
+networks:
+  qrforge-net:
+    driver: bridge
+    name: qrforge-net

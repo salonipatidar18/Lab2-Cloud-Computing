@@ -1,0 +1,28 @@
+# k8s/service.yaml
+# LoadBalancer service for the frontend — provisions an Azure Load Balancer
+# with a public IP so the app is reachable from the internet.
+apiVersion: v1
+kind: Service
+metadata:
+  name: qrforge-frontend
+  namespace: qrforge
+  labels:
+    app: qrforge-frontend
+    app.kubernetes.io/name: qrforge-frontend
+    app.kubernetes.io/component: frontend
+  annotations:
+    # Azure-specific: use a standard SKU load balancer (required for multiple frontend IPs)
+    service.beta.kubernetes.io/azure-load-balancer-sku: "standard"
+spec:
+  # LoadBalancer creates an Azure Load Balancer + public IP automatically.
+  # Use: kubectl get svc qrforge-frontend -n qrforge
+  # Wait for EXTERNAL-IP to be assigned (takes ~60-90s on AKS).
+  type: LoadBalancer
+  selector:
+    app: qrforge-frontend  # Routes to pods with this label
+  ports:
+    - name: http
+      port: 80            # External port (what users connect to)
+      targetPort: http    # Named port 'http' on the pod (= 3000)
+      protocol: TCP
+  # sessionAffinity: None  # Default — round-robin across all healthy pods (shows HPA)

@@ -1,0 +1,22 @@
+# k8s/redis-service.yaml
+# ClusterIP service — exposes Redis ONLY inside the cluster.
+# Frontend pods connect via hostname "redis" (Kubernetes DNS: redis.qrforge.svc.cluster.local)
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: qrforge
+  labels:
+    app: redis
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache
+spec:
+  # ClusterIP: only reachable from within the cluster (not exposed externally)
+  type: ClusterIP
+  selector:
+    app: redis          # Routes traffic to pods with this label
+  ports:
+    - name: redis
+      port: 6379        # Port the service listens on (used by frontend: REDIS_PORT=6379)
+      targetPort: redis  # Named port on the pod
+      protocol: TCP

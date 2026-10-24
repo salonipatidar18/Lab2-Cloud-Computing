@@ -1,0 +1,48 @@
+# k8s/hpa.yaml
+# Horizontal Pod Autoscaler — scales the frontend deployment based on CPU usage.
+# HPA algorithm: desiredReplicas = ceil(currentReplicas * (currentMetricValue / desiredMetricValue))
+# ─────────────────────────────────────────────────────────────────────────────
+# IMPORTANT: The HPA computes CPU utilization RELATIVE TO resource.requests.cpu.
+#   Our request = 100m. At 50% target, HPA fires when a pod uses ~50m CPU.
+#   Under /api/heavy load at size=2000&n=10, each pod easily hits 100-200m,
+#   so you'll see scaling to 2-5 replicas quickly.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: qrforge-frontend
+  namespace: qrforge
+  labels:
+    app: qrforge-frontend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: qrforge-frontend   # Must match the Deployment name exactly
+  minReplicas: 1   # Always keep at least 1 pod running
+  maxReplicas: 5   # Cap at 5 to fit within a Standard_B2s single node (2 vCPU, 4 GB RAM)
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type:               AverageUtilization
+          # 50%: trigger scale-up when avg CPU across all pods > 50% of their request
+          # Lower threshold = faster demo, but may thrash on a quiet cluster.
+          averageUtilization: 50
+  # ── Scaling behavior (autoscaling/v2 feature) ──────────────────
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0   # Scale up immediately (no stabilization)
+      policies:
+        - type:          Pods
+          value:         2            # Add up to 2 pods per scaling interval
+          periodSeconds: 15           # Interval = HPA sync period
+    scaleDown:
+      # Wait 60 seconds of sustained low-CPU before removing pods.
+      # Prevents thrashing during short load bursts.
+      stabilizationWindowSeconds: 60
+      policies:
+        - type:          Pods
+          value:         1            # Remove at most 1 pod per interval during scale-down
+          periodSeconds: 30
