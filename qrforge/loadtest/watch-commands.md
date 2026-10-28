@@ -96,7 +96,7 @@ kubectl get pods,svc,hpa -n qrforge
 | # | What to Screenshot | Command / Portal Page |
 |---|---|---|
 | 1 | **Student identity** | Terminal 1 output above |
-| 2 | **ACR build logs** | `az acr build …` output (scripts/acr-build-push.sh) |
+| 2 | **ACR build logs / Push** | `az acr build …` error (`TasksOperationsNotAllowed`) & `docker push` digest |
 | 3 | **AKS creation** | `az aks create …` output (scripts/aks-create.sh) |
 | 4 | **Initial state (before load)** | `kubectl get pods,svc,hpa -n qrforge` |
 | 5 | **HPA scaling up** | Terminal 2 — REPLICAS column increasing |

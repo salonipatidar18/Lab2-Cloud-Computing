@@ -20,13 +20,13 @@ spec:
     kind: Deployment
     name: qrforge-frontend   # Must match the Deployment name exactly
   minReplicas: 1   # Always keep at least 1 pod running
-  maxReplicas: 5   # Cap at 5 to fit within a Standard_B2s single node (2 vCPU, 4 GB RAM)
+  maxReplicas: 5   # Cap at 5 to fit within a Standard_B2s_v2 single node (2 vCPU, 8 GB RAM)
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
-          type:               AverageUtilization
+          type:               Utilization
           # 50%: trigger scale-up when avg CPU across all pods > 50% of their request
           # Lower threshold = faster demo, but may thrash on a quiet cluster.
           averageUtilization: 50

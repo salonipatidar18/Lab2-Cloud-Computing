@@ -9,11 +9,11 @@ set -euo pipefail
 
 # ─── Configuration ─────────────────────────────────────────────
 RESOURCE_GROUP="${RESOURCE_GROUP:-qrforge-rg}"
-LOCATION="${LOCATION:-eastus}"
+LOCATION="${LOCATION:-koreacentral}"
 CLUSTER_NAME="${CLUSTER_NAME:-qrforge-aks}"
 ACR_NAME="${ACR_NAME:?ACR_NAME must be set. Export it from acr-build-push.sh}"
 NODE_COUNT=1
-NODE_VM_SIZE="Standard_B2s"
+NODE_VM_SIZE="Standard_B2s_v2"
 LOG_WORKSPACE_NAME="qrforge-logs"
 # ───────────────────────────────────────────────────────────────
 
@@ -21,7 +21,14 @@ echo "▶ Identity verification…"
 bash "$(dirname "$0")/identity.sh"
 
 echo ""
-echo "▶ [1/5] Creating Log Analytics workspace for Container Insights…"
+echo "▶ [1/6] Ensuring resource group exists: ${RESOURCE_GROUP} in ${LOCATION}…"
+az group create \
+  --name "${RESOURCE_GROUP}" \
+  --location "${LOCATION}" \
+  --output table
+
+echo ""
+echo "▶ [2/6] Creating Log Analytics workspace for Container Insights…"
 LOG_WORKSPACE_ID=$(az monitor log-analytics workspace create \
   --resource-group "${RESOURCE_GROUP}" \
   --workspace-name "${LOG_WORKSPACE_NAME}" \
@@ -31,7 +38,7 @@ LOG_WORKSPACE_ID=$(az monitor log-analytics workspace create \
 echo "        Workspace ID: ${LOG_WORKSPACE_ID}"
 
 echo ""
-echo "▶ [2/5] Creating AKS cluster: ${CLUSTER_NAME}"
+echo "▶ [3/6] Creating AKS cluster: ${CLUSTER_NAME}"
 echo "        Node SKU: ${NODE_VM_SIZE}, Count: ${NODE_COUNT}"
 echo "        *** SCREENSHOT THIS OUTPUT ***"
 echo ""
@@ -48,18 +55,18 @@ az aks create \
   --output table
 
 echo ""
-echo "▶ [3/5] Getting credentials (merges into ~/.kube/config)…"
+echo "▶ [4/6] Getting credentials (merges into ~/.kube/config)…"
 az aks get-credentials \
   --resource-group "${RESOURCE_GROUP}" \
   --name "${CLUSTER_NAME}" \
   --overwrite-existing
 
 echo ""
-echo "▶ [4/5] Verifying cluster connection…"
+echo "▶ [5/6] Verifying cluster connection…"
 kubectl get nodes
 
 echo ""
-echo "▶ [5/5] Enabling metrics server (for HPA CPU metrics)…"
+echo "▶ [6/6] Enabling metrics server (for HPA CPU metrics)…"
 # On AKS the metrics server is usually pre-installed.
 # This command verifies it's present.
 kubectl get deployment metrics-server -n kube-system 2>/dev/null \

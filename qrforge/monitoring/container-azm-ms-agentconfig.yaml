@@ -1,0 +1,38 @@
+# monitoring/container-azm-ms-agentconfig.yaml
+# Controls what the AMA-Logs / Container Insights agent collects.
+# Official docs: https://learn.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-agent-config
+#
+# Azure Monitor free tier: 500 MB/day for logs.
+# stdout/stderr logs are DISABLED here to protect the free quota.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: container-azm-ms-agentconfig
+  namespace: kube-system
+data:
+  schema-version: v1
+  config-version: ver1
+  log-data-collection-settings: |-
+    # ── Log collection settings ──────────────────────────────
+    [log_collection_settings]
+      [log_collection_settings.stdout]
+        # DISABLED to protect the 500 MB/day free quota.
+        enabled = false
+        exclude_namespaces = ["kube-system"]
+
+      [log_collection_settings.stderr]
+        # DISABLED — same reason as stdout.
+        enabled = false
+        exclude_namespaces = ["kube-system"]
+
+      [log_collection_settings.env_var]
+        # Collect environment variables from containers (lightweight)
+        enabled = true
+
+      [log_collection_settings.enrich_container_logs]
+        enabled = true
+
+  metric-collection-settings: |-
+    # ── Metrics collection settings ──────────────────────────
+    [metric_collection_settings.collect_kube_system_pv_metrics]
+      enabled = true

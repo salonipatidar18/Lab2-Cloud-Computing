@@ -4,7 +4,7 @@
 # ═══════════════════════════════════════════════════════════════
 # 'hey' sends HTTP requests as fast as possible with -c concurrency
 # for -z duration. This will overwhelm the QR generation CPU on a
-# Standard_B2s node and trigger HPA to scale up.
+# Standard_B2s_v2 node and trigger HPA to scale up.
 #
 # Install 'hey':
 #   Linux/macOS: go install github.com/rakyll/hey@latest

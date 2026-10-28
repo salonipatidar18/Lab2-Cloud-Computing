@@ -1,0 +1,30 @@
+# QRForge — .gitignore
+# System and temporary scratch files
+0
+.acr_name
+scratch/
+
+# Reports and Evidence (kept locally, not pushed to GitHub)
+docs/
+evidence/
+scripts/build_report.py
+scripts/find_evidence.py
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Load test outputs and heavy logs
+loadtest/results/
+loadtest/__pycache__/
+loadtest/query_*.ps1
+loadtest/calibrate.ps1
+loadtest/check_routes.ps1
+loadtest/run-gentle-test.ps1
+
+# Temporary scripts
+scripts/check_pdf.py
+scripts/audit_secrets.ps1
+scripts/render_pdf_pages.py
+scripts/verify_no_placeholders.py

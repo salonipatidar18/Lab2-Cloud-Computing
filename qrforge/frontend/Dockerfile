@@ -38,10 +38,8 @@ LABEL org.opencontainers.image.title="QRForge Frontend" \
       org.opencontainers.image.description="QR code generator web service" \
       org.opencontainers.image.version="1.0.0"
 
-# Create a non-root user for security
-# Running as root in a container is a security risk — even though containers
-# are isolated, a breakout exploit would have root-level OS access.
-RUN addgroup -S qrforge && adduser -S -G qrforge qrforge
+# Create a non-root user for security (UID/GID 1001 matching k8s securityContext)
+RUN addgroup -g 1001 -S qrforge && adduser -u 1001 -S -G qrforge qrforge
 
 WORKDIR /app
 

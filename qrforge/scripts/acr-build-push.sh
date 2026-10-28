@@ -9,7 +9,7 @@ set -euo pipefail
 
 # ─── Configuration variables — edit these before running ───────
 RESOURCE_GROUP="qrforge-rg"
-LOCATION="eastus"
+LOCATION="${LOCATION:-koreacentral}"
 ACR_NAME="qrforgeacr$(openssl rand -hex 3)"   # Must be globally unique; override if needed
 IMAGE_TAG="qrforge-frontend:v1"
 # ───────────────────────────────────────────────────────────────

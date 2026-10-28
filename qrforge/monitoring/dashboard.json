@@ -79,7 +79,7 @@
 
               "2": {
                 "position": { "x": 0, "y": 4, "colSpan": 6, "rowSpan": 4 },
-                "_comment": "TILE 3: HTTP request count + P95 latency. Pin a Log Analytics query chart using query #3a/#3b from kql-queries.md",
+                "_comment": "TILE 3: HTTP Request Count & P95 Latency. In Azure Portal, pin from Azure Monitor workspace (qrforge-amw) > Prometheus explorer using PromQL: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app=\"qrforge-frontend\"}[5m])) by (le)) and sum(rate(http_requests_total{app=\"qrforge-frontend\"}[5m])). Log Analytics placeholder included below.",
                 "metadata": {
                   "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
                   "inputs": [
@@ -93,11 +93,11 @@
                     },
                     {
                       "name": "Query",
-                      "value": "InsightsMetrics\n| where TimeGenerated >= ago(30m)\n| where Namespace == 'prometheus'\n| where Name == 'http_requests_total'\n| extend Route = tostring(parse_json(Tags)['route']), Status = tostring(parse_json(Tags)['status'])\n| summarize TotalRequests = sum(Val) by bin(TimeGenerated, 1m), Route, Status\n| render timechart"
+                      "value": "Perf\n| where TimeGenerated >= ago(30m)\n| where ObjectName == 'K8SContainer' and InstanceName endswith '/frontend'\n| summarize TotalRecords = count() by bin(TimeGenerated, 1m)\n| render timechart"
                     },
                     {
                       "name": "PartTitle",
-                      "value": "HTTP Request Count + P95 Latency"
+                      "value": "HTTP Request Count + P95 Latency (Pin from qrforge-amw)"
                     }
                   ]
                 }
@@ -138,31 +138,32 @@
 
   "_portal_instructions": {
     "HOW_TO_IMPORT": [
-      "1. Azure Portal → search 'Dashboard' in top bar",
-      "2. Click '+ Create' → 'Upload'",
+      "1. Azure Portal -> search 'Dashboard' in top bar",
+      "2. Click '+ Create' -> 'Upload'",
       "3. Select this dashboard.json file",
-      "4. Scope each tile to your AKS cluster and Log Analytics workspace",
+      "4. The dashboard renders tiles 1, 2, and 4 from Log Analytics / Monitor metrics.",
       "",
-      "MANUAL TILE CREATION (if import fails):",
+      "HOW TO PIN TILE 3 (Prometheus P95 Latency & Request Rate):",
+      "  1. Go to Azure Monitor workspaces -> select 'qrforge-amw'",
+      "  2. In left sidebar under Monitoring -> select 'Prometheus explorer'",
+      "  3. Paste: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app=\"qrforge-frontend\"}[5m])) by (le))",
+      "  4. Click 'Run query'",
+      "  5. Click the pushpin icon 'Pin to dashboard' in top-right of chart -> select this dashboard -> click Pin.",
+      "  6. (Optional) Repeat for request rate: sum(rate(http_requests_total{app=\"qrforge-frontend\"}[5m]))",
       "",
-      "TILE 1 — CPU per Pod:",
-      "  Monitor > Metrics > Scope: your AKS cluster",
-      "  Metric namespace: insights.container/containers",
-      "  Metric: cpuUsageNanoCores, Aggregation: Avg",
-      "  Split by: containerName",
-      "  Filter: containerName contains 'qrforge-frontend'",
-      "  Pin to dashboard",
+      "MANUAL TILE CREATION (if uploading JSON is not desired):",
       "",
-      "TILE 2 — Memory Trend:",
-      "  Same as above but metric: memoryWorkingSetBytes",
+      "TILE 1 -- CPU per Pod:",
+      "  Log Analytics -> Logs -> run query #1 from kql-queries.md -> Pin to dashboard",
       "",
-      "TILE 3 — HTTP Requests + P95:",
-      "  Log Analytics > Logs > paste query #3a from kql-queries.md",
-      "  Click 'Pin to dashboard'",
+      "TILE 2 -- Memory Trend:",
+      "  Log Analytics -> Logs -> run query #2 from kql-queries.md -> Pin to dashboard",
       "",
-      "TILE 4 — Replica Count:",
-      "  Log Analytics > Logs > paste query #4 from kql-queries.md",
-      "  Click 'Pin to dashboard'"
+      "TILE 3 -- HTTP Requests + P95 Latency:",
+      "  Azure Monitor workspace (qrforge-amw) -> Prometheus explorer -> run PromQL -> Pin to dashboard",
+      "",
+      "TILE 4 -- Replica Count:",
+      "  Log Analytics -> Logs -> run query #4 from kql-queries.md -> Pin to dashboard"
     ]
   }
 }

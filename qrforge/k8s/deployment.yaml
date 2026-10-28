@@ -52,7 +52,7 @@ spec:
         - name: frontend
           # ── Image ────────────────────────────────────────────
           # Replace <ACR_NAME> with your ACR login server prefix
-          image: <ACR_NAME>.azurecr.io/qrforge-frontend:v1
+          image: qrforgeacrhrzsue.azurecr.io/qrforge-frontend:v1
           imagePullPolicy: Always    # Always pull to pick up :v1 tag updates
           ports:
             - name: http

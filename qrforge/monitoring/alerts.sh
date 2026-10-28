@@ -12,7 +12,7 @@ set -euo pipefail
 # ─── Configuration — edit before running ───────────────────────
 RESOURCE_GROUP="${RESOURCE_GROUP:-qrforge-rg}"
 CLUSTER_NAME="${CLUSTER_NAME:-qrforge-aks}"
-LOCATION="${LOCATION:-eastus}"
+LOCATION="${LOCATION:-koreacentral}"
 ALERT_EMAIL="${ALERT_EMAIL:-student@university.edu}"   # Replace with your email
 ACTION_GROUP_NAME="qrforge-alerts"
 LOG_WORKSPACE_NAME="qrforge-logs"

@@ -1,5 +1,14 @@
-
 node_modules/
 .env
 .env.*
 !.env.example
+
+# Local reports and evidence
+qrforge/docs/
+qrforge/evidence/
+docs/
+evidence/
+qrforge/scripts/build_report.py
+qrforge/scripts/find_evidence.py
+scripts/build_report.py
+scripts/find_evidence.py

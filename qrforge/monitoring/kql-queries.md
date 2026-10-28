@@ -11,29 +11,17 @@
 ## 1. Average CPU Utilization per Pod (Last 30 Minutes)
 
 ```kql
-// Source: Container Insights Perf table (cadvisor metrics via AMA-Metrics)
+// Source: Container Insights Perf table (cadvisor metrics via AMA)
 Perf
 | where TimeGenerated >= ago(30m)
 | where ObjectName == "K8SContainer"
 | where CounterName == "cpuUsageNanoCores"
-| where InstanceName contains "qrforge-frontend"
+| where InstanceName endswith "/frontend"
 | summarize
     AvgCPU_mCores = avg(CounterValue) / 1_000_000,  // nanocores → millicores
     MaxCPU_mCores = max(CounterValue) / 1_000_000
-    by bin(TimeGenerated, 1m), PodName = tostring(split(InstanceName, "/")[1])
+    by bin(TimeGenerated, 1m)
 | order by TimeGenerated desc
-```
-
-**Alternative using InsightsMetrics (newer AMA-based ingestion):**
-
-```kql
-InsightsMetrics
-| where TimeGenerated >= ago(30m)
-| where Namespace == "container.azm.ms/Kubernetes/container"
-| where Name == "cpuUsageNanoCores"
-| extend PodName = tostring(parse_json(Tags)["container.azm.ms/pod"])
-| where PodName startswith "qrforge-frontend"
-| summarize AvgCPU_mCores = avg(Val) / 1_000_000 by bin(TimeGenerated, 1m), PodName
 | render timechart
 ```
 
@@ -43,70 +31,43 @@ InsightsMetrics
 
 ```kql
 // Working Set = memory actively used (not reclaimable)
-InsightsMetrics
+Perf
 | where TimeGenerated >= ago(1h)
-| where Namespace == "container.azm.ms/Kubernetes/container"
-| where Name == "memoryWorkingSetBytes"
-| extend PodName = tostring(parse_json(Tags)["container.azm.ms/pod"])
-| where PodName startswith "qrforge-frontend"
-| summarize AvgMemMB = avg(Val) / (1024 * 1024) by bin(TimeGenerated, 1m), PodName
-| render timechart
-```
-
----
-
-## 3a. Total HTTP Request Count (from Prometheus custom metrics)
-
-```kql
-// Requires Prometheus scraping to be enabled (prometheus-configmap.yaml applied).
-// Metrics appear in the InsightsMetrics table with Namespace = "prometheus".
-InsightsMetrics
-| where TimeGenerated >= ago(30m)
-| where Namespace == "prometheus"
-| where Name == "http_requests_total"
-| extend
-    Route  = tostring(parse_json(Tags)["route"]),
-    Status = tostring(parse_json(Tags)["status"]),
-    Method = tostring(parse_json(Tags)["method"])
-| summarize TotalRequests = sum(Val) by bin(TimeGenerated, 1m), Route, Status
+| where ObjectName == "K8SContainer"
+| where CounterName == "memoryWorkingSetBytes"
+| where InstanceName endswith "/frontend"
+| summarize AvgMemMB = avg(CounterValue) / (1024 * 1024) by bin(TimeGenerated, 1m)
 | order by TimeGenerated desc
 | render timechart
 ```
 
 ---
 
-## 3b. P95 HTTP Request Latency (Prometheus histogram)
+## 3. Total HTTP Request Count & P95 Latency (Prometheus custom metrics)
 
-```kql
-// http_request_duration_seconds_bucket exported by prom-client
-// Azure Monitor stores histogram buckets as individual series (le label = upper bound)
-InsightsMetrics
-| where TimeGenerated >= ago(30m)
-| where Namespace == "prometheus"
-| where Name == "http_request_duration_seconds_bucket"
-| extend
-    le    = todouble(tostring(parse_json(Tags)["le"])),
-    route = tostring(parse_json(Tags)["route"])
-| where route == "/api/heavy" or route == "/api/qr"
-| summarize
-    Bucket_Count = sum(Val)
-    by bin(TimeGenerated, 1m), route, le
-| order by TimeGenerated, le asc
-// Note: True percentile from histograms requires aggregating bucket counts.
-// For a quick view, filter to le="1" (requests under 1s) vs le="+Inf" (all).
+### PromQL Queries (Run in Azure Monitor Workspace -> qrforge-amw -> Prometheus Explorer):
+
+**P95 Request Latency (seconds):**
+```promql
+histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app="qrforge-frontend"}[5m])) by (le))
 ```
 
-**Simpler P95 approximation using summarize percentile (if raw duration is stored):**
-
-```kql
-InsightsMetrics
-| where TimeGenerated >= ago(30m)
-| where Namespace == "prometheus"
-| where Name == "http_request_duration_seconds_sum"
-| extend route = tostring(parse_json(Tags)["route"])
-| summarize TotalDuration = sum(Val) by bin(TimeGenerated, 1m), route
-| render timechart
+**HTTP Request Rate (requests/second):**
+```promql
+sum(rate(http_requests_total{app="qrforge-frontend"}[5m]))
 ```
+
+**Total HTTP Requests Counter by Route & Status:**
+```promql
+sum by (route, status) (http_requests_total{app="qrforge-frontend"})
+```
+
+### Pinning PromQL Tiles to Azure Portal Dashboard:
+1. In Azure Portal, navigate to **Azure Monitor workspaces** &rarr; **qrforge-amw**.
+2. In the left menu under **Monitoring**, click **Prometheus explorer**.
+3. Paste the PromQL query above and click **Run query**.
+4. Click the **Pin to dashboard** icon (pushpin) in the upper right corner of the chart.
+5. Select your target dashboard (e.g. `qrforge-monitoring-dashboard` or Private/Shared) and click **Pin**.
 
 ---
 
@@ -178,3 +139,37 @@ cpu | join kind=leftouter replicas on TimeGenerated
 | project TimeGenerated, AvgCPU_mCores, Replicas
 | render timechart
 ```
+
+---
+
+## 7. Azure Monitor Alert Rules Queries
+
+### Alert 1: CPU > 75% for 5 minutes (Option A: Max Pod CPU)
+> **Note on Alert Design:** This alert evaluates the **maximum (busiest) pod CPU** across frontend pods (`MaxCPU_mCores > 75`, which is 75% of the 100m CPU request) rather than the fleet-wide average. Because the Kubernetes HPA actively scales out replicas to keep the average utilization near 50%, an average across all pods would be diluted during scale-out. Targeting the busiest pod ensures the alert reliably fires when workload spikes exceed 75m for the 5-minute evaluation window.
+
+```kql
+Perf
+| where TimeGenerated >= ago(5m)
+| where ObjectName == "K8SContainer" and CounterName == "cpuUsageNanoCores" and InstanceName endswith "/frontend"
+| summarize MaxCPU_mCores = max(CounterValue) / 1000000 by bin(TimeGenerated, 1m)
+| where MaxCPU_mCores > 75
+```
+- **Operator:** GreaterThan 0
+- **Evaluation Frequency:** 1m
+- **Window Size:** 5m
+- **Severity:** 2 (Warning)
+
+### Alert 2: Pod Restarts > 3 in 10 minutes
+
+```kql
+KubePodInventory
+| where TimeGenerated >= ago(10m)
+| where Namespace == "qrforge"
+| where Name startswith "qrforge-frontend"
+| summarize MaxRestarts = max(PodRestartCount) by Name
+| where MaxRestarts > 3
+```
+- **Operator:** GreaterThan 0
+- **Evaluation Frequency:** 5m
+- **Window Size:** 10m
+- **Severity:** 1 (Error)
