@@ -15,42 +15,35 @@ QRForge is a production-grade, two-tier cloud microservices application designed
 ## 🏗️ System Architecture
 
 ```mermaid
-graph TB
+flowchart TB
     Client["👤 User / Locust Load Test"] -->|HTTP 80| LB["Azure Load Balancer<br/>Public IP"]
-    LB --> FE1["Frontend Pod 1<br/>Node.js Express / Alpine"]
-    LB --> FE2["Frontend Pod 2<br/>Node.js Express / Alpine"]
-    LB --> FE3["Frontend Pod 3-5<br/>Node.js Express / Alpine"]
+    LB --> FE["Frontend Service / Pods (1-5 Replicas)<br/>Node.js 20 Express / Alpine"]
 
     subgraph AKS["🐳 Azure Kubernetes Service (AKS): qrforge-aks"]
-        subgraph NS["namespace: qrforge"]
-            FE1 & FE2 & FE3
-            HPA["🔄 HPA v2<br/>min: 1, max: 5<br/>Target CPU: 50%"]
-            Redis[("🗄️ Redis 7<br/>ClusterIP Service")]
-        end
-        HPA -->|scales replicas 1 to 5| FE1 & FE2 & FE3
+        FE -->|TCP 6379 Cache Lookup| Redis[("🗄️ Redis 7<br/>ClusterIP Service")]
+        HPA["🔄 HPA v2 (Target CPU: 50%)"] -.->|Autoscales 1 to 5| FE
     end
-
-    FE1 & FE2 & FE3 -->|TCP 6379 Cache Lookup| Redis
 
     subgraph Azure["☁️ Azure Monitor & Observability Pipeline"]
         AMA["Azure Monitor Metrics Agent<br/>Prometheus Scraper"]
         LAW["📊 Log Analytics Workspace<br/>500 MB/day Cap Protection"]
         Dashboard["📈 Azure Portal Dashboard<br/>4 Real-time Tiles"]
-        Alerts["🔔 Alert Rules: CPU > 75m / Restarts > 3"]
+        Alerts["🔔 Alert Rules: CPU > 75m, Restarts > 3"]
         AG["📧 Action Group: qrforge-alerts<br/>Email Receiver"]
+
+        AMA --> LAW
+        LAW --> Dashboard
+        LAW --> Alerts
+        Alerts --> AG
     end
 
-    FE1 & FE2 & FE3 -->|/metrics endpoint| AMA
-    AMA --> LAW
-    LAW --> Dashboard
-    LAW --> Alerts
-    Alerts --> AG
+    FE -->|/metrics endpoint| AMA
 
     subgraph ACR["🐋 Azure Container Registry"]
         Img["qrforgeacrhrzsue.azurecr.io<br/>qrforge-frontend:v1"]
     end
 
-    Img -->|imagePull| FE1 & FE2 & FE3
+    Img -.->|imagePull| FE
 
     subgraph Build["🔄 Container Build Pipeline"]
         Dev["Local Workstation"] -->|docker build| LocalImg["qrforge-frontend:v1"]
