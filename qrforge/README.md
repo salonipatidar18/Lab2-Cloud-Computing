@@ -33,16 +33,16 @@ During lab execution, specific constraints and findings required five necessary 
 
 ```mermaid
 graph TB
-    User((👤 User / Locust)) -->|HTTP 80| LB[Azure Load Balancer\n20.249.152.150]
-    LB --> FE1[Frontend Pod 1\nNode.js / Express]
-    LB --> FE2[Frontend Pod 2\nNode.js / Express]
-    LB --> FE3[Frontend Pod 3-5\nNode.js / Express]
+    User["👤 User / Locust"] -->|HTTP 80| LB["Azure Load Balancer<br/>20.249.152.150"]
+    LB --> FE1["Frontend Pod 1<br/>Node.js / Express"]
+    LB --> FE2["Frontend Pod 2<br/>Node.js / Express"]
+    LB --> FE3["Frontend Pod 3-5<br/>Node.js / Express"]
 
     subgraph AKS["🐳 AKS Cluster: qrforge-aks (2x Standard_B2s_v2 Nodes)"]
         subgraph NS["namespace: qrforge"]
             FE1 & FE2 & FE3
-            HPA[🔄 HPA\nmin:1 max:5\nCPU@50%]
-            Redis[(🗄️ Redis 7\nClusterIP)]
+            HPA["🔄 HPA<br/>min:1 max:5<br/>CPU@50%"]
+            Redis[("🗄️ Redis 7<br/>ClusterIP")]
         end
         HPA -->|scales replicas 1 to 5| FE1 & FE2 & FE3
     end
@@ -50,11 +50,11 @@ graph TB
     FE1 & FE2 & FE3 -->|REDIS_HOST + TCP 6379| Redis
 
     subgraph Azure["☁️ Azure Monitor & Observability"]
-        AMA[AMA-Metrics Agent\nAzure Managed Prometheus]
-        LAW[📊 Log Analytics: qrforge-logs\n500 MB/day Cap]
-        Dashboard[📈 Azure Portal Dashboard\n4 Tiles]
-        Alerts[🔔 Alert Rules\nCPU > 75m | Restarts > 3]
-        AG[📧 Action Group: qrforge-alerts\nEmail Receiver]
+        AMA["AMA-Metrics Agent<br/>Azure Managed Prometheus"]
+        LAW["📊 Log Analytics: qrforge-logs<br/>500 MB/day Cap"]
+        Dashboard["📈 Azure Portal Dashboard<br/>4 Tiles"]
+        Alerts["🔔 Alert Rules: CPU > 75m / Restarts > 3"]
+        AG["📧 Action Group: qrforge-alerts<br/>Email Receiver"]
     end
 
     FE1 & FE2 & FE3 -->|/metrics Prometheus| AMA
@@ -65,13 +65,13 @@ graph TB
     AG -->|email| User
 
     subgraph ACR["🐋 Azure Container Registry"]
-        Img[qrforgeacrhrzsue.azurecr.io\nqrforge-frontend:v1]
+        Img["qrforgeacrhrzsue.azurecr.io<br/>qrforge-frontend:v1"]
     end
 
     Img -->|imagePull| FE1 & FE2 & FE3
 
     subgraph Build["🔄 Image Build Pipeline"]
-        Dev[Local Machine] -->|docker build| LocalImg[qrforge-frontend:v1]
+        Dev["Local Machine"] -->|docker build| LocalImg["qrforge-frontend:v1"]
         LocalImg -->|az acr login + docker push| Img
     end
 ```

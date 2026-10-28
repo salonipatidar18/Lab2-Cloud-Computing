@@ -16,16 +16,16 @@ QRForge is a production-grade, two-tier cloud microservices application designed
 
 ```mermaid
 graph TB
-    Client((👤 User / Locust Load Test)) -->|HTTP 80| LB[Azure Load Balancer\nPublic IP]
-    LB --> FE1[Frontend Pod 1\nNode.js Express / Alpine]
-    LB --> FE2[Frontend Pod 2\nNode.js Express / Alpine]
-    LB --> FE3[Frontend Pod 3-5\nNode.js Express / Alpine]
+    Client["👤 User / Locust Load Test"] -->|HTTP 80| LB["Azure Load Balancer<br/>Public IP"]
+    LB --> FE1["Frontend Pod 1<br/>Node.js Express / Alpine"]
+    LB --> FE2["Frontend Pod 2<br/>Node.js Express / Alpine"]
+    LB --> FE3["Frontend Pod 3-5<br/>Node.js Express / Alpine"]
 
     subgraph AKS["🐳 Azure Kubernetes Service (AKS): qrforge-aks"]
         subgraph NS["namespace: qrforge"]
             FE1 & FE2 & FE3
-            HPA[🔄 HPA v2\nmin: 1, max: 5\nTarget CPU: 50%]
-            Redis[(🗄️ Redis 7\nClusterIP Service)]
+            HPA["🔄 HPA v2<br/>min: 1, max: 5<br/>Target CPU: 50%"]
+            Redis[("🗄️ Redis 7<br/>ClusterIP Service")]
         end
         HPA -->|scales replicas 1 to 5| FE1 & FE2 & FE3
     end
@@ -33,11 +33,11 @@ graph TB
     FE1 & FE2 & FE3 -->|TCP 6379 Cache Lookup| Redis
 
     subgraph Azure["☁️ Azure Monitor & Observability Pipeline"]
-        AMA[Azure Monitor Metrics Agent\nPrometheus Scraper]
-        LAW[📊 Log Analytics Workspace\n500 MB/day Cap Protection]
-        Dashboard[📈 Azure Portal Dashboard\n4 Real-time Tiles]
-        Alerts[🔔 Alert Rules\nCPU > 75m | Restarts > 3]
-        AG[📧 Action Group: qrforge-alerts\nEmail Receiver]
+        AMA["Azure Monitor Metrics Agent<br/>Prometheus Scraper"]
+        LAW["📊 Log Analytics Workspace<br/>500 MB/day Cap Protection"]
+        Dashboard["📈 Azure Portal Dashboard<br/>4 Real-time Tiles"]
+        Alerts["🔔 Alert Rules: CPU > 75m / Restarts > 3"]
+        AG["📧 Action Group: qrforge-alerts<br/>Email Receiver"]
     end
 
     FE1 & FE2 & FE3 -->|/metrics endpoint| AMA
@@ -47,13 +47,13 @@ graph TB
     Alerts --> AG
 
     subgraph ACR["🐋 Azure Container Registry"]
-        Img[qrforgeacrhrzsue.azurecr.io\nqrforge-frontend:v1]
+        Img["qrforgeacrhrzsue.azurecr.io<br/>qrforge-frontend:v1"]
     end
 
     Img -->|imagePull| FE1 & FE2 & FE3
 
     subgraph Build["🔄 Container Build Pipeline"]
-        Dev[Local Workstation] -->|docker build| LocalImg[qrforge-frontend:v1]
+        Dev["Local Workstation"] -->|docker build| LocalImg["qrforge-frontend:v1"]
         LocalImg -->|az acr login + docker push| Img
     end
 ```
